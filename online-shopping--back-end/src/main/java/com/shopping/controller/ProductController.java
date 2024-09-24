@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shopping.dto.ProductDto;
+import com.shopping.exception.AlreadyExistsException;
 import com.shopping.exception.ProductNotFoundException;
 import com.shopping.model.Product;
 import com.shopping.request.AddProductRequest;
@@ -31,12 +33,15 @@ public class ProductController {
 
 	private final IProductService productService;
 
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@PostMapping("/product/add")
 	public ResponseEntity<ApiResponse> addProduct(@RequestBody AddProductRequest product) {
 
 		try {
 			var addedProduct = productService.addProduct(product);
 			return ResponseEntity.ok(new ApiResponse("Add product success!", addedProduct));
+		} catch (AlreadyExistsException e) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new ApiResponse("Add product failed!", null));
@@ -44,6 +49,7 @@ public class ProductController {
 
 	}
 
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@DeleteMapping("/product/delete/{productId}")
 	public ResponseEntity<ApiResponse> deleteProduct(@PathVariable Long productId) {
 
@@ -56,6 +62,7 @@ public class ProductController {
 		}
 	}
 
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
 	@PutMapping("/product/update/{productId}")
 	public ResponseEntity<ApiResponse> updateProduct(@RequestBody ProductUpdateRequest product,
 			@PathVariable Long productId) {
@@ -95,7 +102,7 @@ public class ProductController {
 	public ResponseEntity<ApiResponse> getProductsByBrand(@RequestParam String brand) {
 
 		try {
-			var products = productService.getProductsByBrand(brand);			
+			var products = productService.getProductsByBrand(brand);
 			if (products.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse("No products found!", null));
 			}
@@ -111,7 +118,7 @@ public class ProductController {
 			@RequestParam String name) {
 
 		try {
-			var products = productService.getProductsByBrandAndName(brand, name);			
+			var products = productService.getProductsByBrandAndName(brand, name);
 			if (products.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse("No products found!", null));
 			}
@@ -127,7 +134,7 @@ public class ProductController {
 			@RequestParam String category) {
 
 		try {
-			var products = productService.getProductsByBrandAndCategoryName(brand, category);			
+			var products = productService.getProductsByBrandAndCategoryName(brand, category);
 			if (products.isEmpty()) {
 				return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse("No products found!", null));
 			}

@@ -27,11 +27,11 @@ public class CartIemController {
 	private final ICartItemService cartItemService;
 	private final ICartService cartService;
 	private final IUserService userService;
-
+	
 	@PostMapping("/item/add")
 	public ResponseEntity<ApiResponse> addItemToCart(@RequestParam Long productId, @RequestParam int quantity) {
 		try {
-			User user = userService.getUserById(2L);
+			User user = userService.getAuthenticatedUser();
 			Cart cart = cartService.initializeNewCart(user);
 
 			cartItemService.addItemToCart(cart.getId(), productId, quantity);

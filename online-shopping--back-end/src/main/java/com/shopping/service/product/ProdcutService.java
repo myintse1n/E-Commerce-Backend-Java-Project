@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.shopping.dto.ImageDto;
 import com.shopping.dto.ProductDto;
+import com.shopping.exception.AlreadyExistsException;
 import com.shopping.exception.ProductNotFoundException;
 import com.shopping.model.Category;
 import com.shopping.model.Image;
@@ -36,11 +37,13 @@ public class ProdcutService implements IProductService {
 		// If not exist, save it as the new category
 		// Set it as the new product category
 
-		Category category = categoryRepository.findByName(request.getCategory().getName())
-				.orElseGet(() -> {
-					Category newCategory = new Category(request.getCategory().getName());
-					return categoryRepository.save(newCategory);
-				});
+		if (productRepository.existsByNameAndBrand(request.getName(), request.getBrand())) {
+			throw new AlreadyExistsException(request.getName() + " is already exist. You can update.");
+		}
+		Category category = categoryRepository.findByName(request.getCategory().getName()).orElseGet(() -> {
+			Category newCategory = new Category(request.getCategory().getName());
+			return categoryRepository.save(newCategory);
+		});
 		request.setCategory(category);
 		return productRepository.save(createProduct(request, category));
 	}
@@ -125,19 +128,19 @@ public class ProdcutService implements IProductService {
 
 		return existingProduct;
 	}
-	
+
 	@Override
 	public ProductDto convertToDto(Product product) {
 		ProductDto productDto = modelMapper.map(product, ProductDto.class);
-		List<Image> images  = imageRepository.findByProductId(product.getId());
-		List<ImageDto> imageDto = images.stream().map(image-> modelMapper.map(image, ImageDto.class)).toList();
+		List<Image> images = imageRepository.findByProductId(product.getId());
+		List<ImageDto> imageDto = images.stream().map(image -> modelMapper.map(image, ImageDto.class)).toList();
 		productDto.setImages(imageDto);
 		return productDto;
 	}
-	
+
 	@Override
-	public List<ProductDto> getConvertedProducts(List<Product> products){
-		return products.stream().map( this::convertToDto).toList();
+	public List<ProductDto> getConvertedProducts(List<Product> products) {
+		return products.stream().map(this::convertToDto).toList();
 	}
 
 }
